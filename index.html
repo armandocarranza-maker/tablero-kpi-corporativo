@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tablero Ejecutivo KPI | Servicios Corporativos 2026 (v3)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --bg-base: #07090f;
+      --bg-surface: #0e131f;
+      --bg-card: #131a2a;
+      --bg-card-hover: #182136;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(0, 240, 255, 0.35);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --accent-cyan: #00f0ff;
+      --accent-emerald: #10b981;
+      --accent-violet: #8b5cf6;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-base);
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(0, 240, 255, 0.07) 0%, transparent 35%),
+        radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.05) 0%, transparent 45%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 22px 28px 60px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      padding: 20px 26px;
+      background: linear-gradient(145deg, rgba(19, 26, 42, 0.92), rgba(14, 19, 31, 0.96));
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+      margin-bottom: 18px;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 19px;
+      color: #05080f;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
+    }
+
+    .title-group h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .title-group p {
+      font-size: 0.83rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .live-badge.offline {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 1.8s infinite;
+    }
+
+    .live-badge.offline .pulse-dot {
+      background-color: #f59e0b;
+      box-shadow: 0 0 10px #f59e0b;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.25); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .btn {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+      color: #04070d;
+      border: none;
+      font-weight: 700;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 0 20px rgba(0, 210, 255, 0.35);
+    }
+
+    /* Filter Bar (3 clean filters) */
+    .controls-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+      background: var(--bg-surface);
+      padding: 14px 20px;
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    @media (max-width: 820px) {
+      .controls-bar { grid-template-columns: 1fr; }
+    }
+
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .control-item label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    select, input[type="text"] {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 8px 12px;
+      font-size: 0.84rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, input[type="text"]:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    /* Panel & Matrix Table (Top Section) */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    .panel-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
+
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: center;
+    }
+
+    th, td {
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    th {
+      background: #0a0e18;
+      color: var(--text-secondary);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.71rem;
+      letter-spacing: 0.04em;
+    }
+
+    td:first-child, th:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #111726;
+      z-index: 2;
+      font-weight: 600;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .matrix-link {
+      color: #f8fafc;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .matrix-link:hover {
+      color: var(--accent-cyan);
+    }
+
+    .cell-ok { color: #34d399; font-weight: 700; }
+    .cell-bad { color: #fb7185; font-weight: 700; }
+    .cell-sr { color: #64748b; font-style: italic; }
+
+    /* Compact Summary Strip (Below Matrix, Above Trends) */
+    .compact-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+
+    @media (max-width: 720px) {
+      .compact-summary-grid { grid-template-columns: 1fr; }
+    }
+
+    .compact-stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 13px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .compact-stat-card::before {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0; left: 0;
+      width: 4px;
+    }
+
+    .compact-stat-card.emerald::before { background: var(--accent-emerald); }
+    .compact-stat-card.amber::before { background: var(--accent-amber); }
+
+    .compact-stat-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .compact-stat-label {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .compact-stat-sub {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .compact-stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    /* Section Heading for All-in-One Charts */
+    .section-heading {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0 16px;
+      gap: 10px;
+    }
+
+    .section-heading h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    /* All KPI Trend Charts Grid */
+    .all-charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .all-charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-chart-card {
+      background: linear-gradient(165deg, #141c2e 0%, #0f1523 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .kpi-chart-card:hover {
+      border-color: var(--border-glow);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(0, 240, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .kpi-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 14px;
+    }
+
+    .kpi-title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .kpi-title-block h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .kpi-meta-line {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .meta-highlight {
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    .dept-highlight {
+      color: #a78bfa;
+      font-weight: 600;
+    }
+
+    .kpi-card-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-consult {
+      background: rgba(0, 240, 255, 0.1);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .btn-consult:hover {
+      background: var(--accent-cyan);
+      color: #05080f;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.4);
+    }
+
+    .kpi-current-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(7, 9, 15, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 0.8rem;
+    }
+
+    .strip-stat {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .strip-stat .val {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .status-pill {
+      font-size: 0.71rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
+    .status-ok {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .status-warn {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .status-bad {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.35);
+    }
+
+    .status-na {
+      background: rgba(148, 163, 184, 0.12);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .mini-chart-wrapper {
+      position: relative;
+      height: 215px;
+      width: 100%;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 5, 10, 0.84);
+      backdrop-filter: blur(7px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: #121827;
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 18px;
+      max-width: 660px;
+      width: 100%;
+      padding: 26px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal h3 {
+      font-size: 1.22rem;
+      margin-bottom: 6px;
+      color: var(--accent-cyan);
+    }
+
+    .modal p {
+      font-size: 0.86rem;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .modal input {
+      width: 100%;
+      margin-bottom: 14px;
+    }
+
+    .modal-steps {
+      background: #0a0e17;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 15px 16px;
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    .modal-steps strong {
+      color: var(--text-primary);
+    }
+
+    .formula-box {
+      background: rgba(0, 240, 255, 0.06);
+      border-left: 3px solid var(--accent-cyan);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      margin: 6px 0 12px;
+    }
+
+    .modal-steps ol {
+      margin-left: 18px;
+      margin-top: 6px;
+    }
+
+    .modal-steps li {
+      margin-bottom: 4px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <header>
+      <div class="brand-block">
+        <div class="brand-icon">SC</div>
+        <div class="title-group">
+          <h1>Indicadores KPI | Servicios Corporativos</h1>
+          <p>Panel Ejecutivo Integral &bull; Matriz Anual y Tendencias en Tiempo Real &bull; Periodo 2026</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div id="syncBadge" class="live-badge offline">
+          <span class="pulse-dot"></span>
+          <span id="syncText">Datos Precargados 2026</span>
+        </div>
+        <button class="btn" onclick="refreshData()" title="Actualizar ahora">
+          &#x21bb; Actualizar
+        </button>
+        <button class="btn btn-primary" onclick="openConfigModal()">
+          &#x2699; Vincular Google Sheets
+        </button>
+      </div>
+    </header>
+
+    <!-- FILTERS (Sin Mes de Evaluación) -->
+    <section class="controls-bar">
+      <div class="control-item">
+        <label for="deptFilter">Filtrar por Departamento</label>
+        <select id="deptFilter" onchange="renderDashboard()">
+          <option value="ALL">Todos los Departamentos</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label for="statusFilter">Estado de Cumplimiento</label>
+        <select id="statusFilter" onchange="renderDashboard()">
+          <option value="ALL">Todos los Indicadores</option>
+          <option value="OK">Solo en Meta</option>
+          <option value="ALERT">Fuera de Meta / Sin Reporte</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label for="refreshInterval">Sincronización Automática</label>
+        <select id="refreshInterval" onchange="setupAutoRefresh()">
+          <option value="30000">Cada 30 segundos</option>
+          <option value="60000" selected>Cada 1 minuto</option>
+          <option value="300000">Cada 5 minutos</option>
+          <option value="0">Manual</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- 1. MATRIZ ANUAL DE RESULTADOS AL INICIO -->
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Matriz Anual de Resultados 2026</div>
+          <div class="panel-subtitle">Vista consolidada de enero a diciembre &bull; Haz clic en cualquier KPI para ver su ficha técnica</div>
+        </div>
+        <span class="panel-subtitle" id="matrixCountLabel">7 indicadores visibles</span>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Indicador KPI</th>
+              <th>Departamento</th>
+              <th>Meta</th>
+              <th>Ene</th>
+              <th>Feb</th>
+              <th>Mar</th>
+              <th>Abr</th>
+              <th>May</th>
+              <th>Jun</th>
+              <th>Jul</th>
+              <th>Ago</th>
+              <th>Sep</th>
+              <th>Oct</th>
+              <th>Nov</th>
+              <th>Dic</th>
+              <th>Prom.</th>
+            </tr>
+          </thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2. TARJETAS COMPACTAS DE RESUMEN (DEBAJO DE MATRIZ Y ANTES DE TENDENCIAS) -->
+    <section class="compact-summary-grid">
+      <div class="compact-stat-card emerald">
+        <div class="compact-stat-info">
+          <span class="compact-stat-label">Indicadores en Meta</span>
+          <span class="compact-stat-sub">Desempeño satisfactorio en último corte reportado</span>
+        </div>
+        <div class="compact-stat-value" id="statOnTarget" style="color: var(--accent-emerald);">0 / 0</div>
+      </div>
+
+      <div class="compact-stat-card amber">
+        <div class="compact-stat-info">
+          <span class="compact-stat-label">Alertas / Sin Reporte</span>
+          <span class="compact-stat-sub" id="statLastUpdate">Última sincronización: --</span>
+        </div>
+        <div class="compact-stat-value" id="statAlerts" style="color: var(--accent-amber);">0</div>
+      </div>
+    </section>
+
+    <!-- 3. TODAS LAS GRÁFICAS DE TENDENCIA EN UNA SOLA VISTA -->
+    <div class="section-heading">
+      <h2>Tendencia Mensual por Indicador (Vista Comparativa Completa)</h2>
+      <span class="panel-subtitle">Línea sólida: Resultado Real &bull; Línea punteada: Meta Objetivo</span>
+    </div>
+    <section class="all-charts-grid" id="allChartsContainer"></section>
+  </div>
+
+  <!-- MODAL DE CONFIGURACIÓN GOOGLE SHEETS -->
+  <div class="modal-backdrop" id="configModal">
+    <div class="modal">
+      <h3>Conexión en Tiempo Real con Google Sheets</h3>
+      <p>Vincula tu archivo <strong>"Indicadores | KPI | Servicios Corporativos"</strong> para que el tablero se actualice automáticamente cada vez que edites celdas en Google Drive.</p>
+
+      <div class="modal-steps">
+        <strong>Pasos para activar el enlace en vivo:</strong>
+        <ol>
+          <li>Abre tu hoja <em>Indicadores | KPI | Servicios Corporativos</em> en Google Sheets.</li>
+          <li>Ve a <strong>Archivo &rarr; Compartir &rarr; Publicar en la web</strong>.</li>
+          <li>Selecciona la pestaña <strong>Servicios Corporativos</strong> y elige formato <strong>Valores separados por comas (.csv)</strong>.</li>
+          <li>Haz clic en <strong>Publicar</strong>, copia el enlace generado y pégalo aquí abajo:</li>
+        </ol>
+      </div>
+
+      <label for="sheetCsvUrl">URL CSV Publicada de Google Sheets:</label>
+      <input type="text" id="sheetCsvUrl" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv" />
+
+      <div class="modal-actions">
+        <button class="btn" onclick="resetToDefaultData()">Restaurar Datos Base</button>
+        <button class="btn" onclick="closeConfigModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveSheetUrl()">Guardar y Conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONSULTA: DETALLE Y FÓRMULA DEL KPI -->
+  <div class="modal-backdrop" id="detailModal">
+    <div class="modal">
+      <h3 id="detailTitle">Detalle del Indicador</h3>
+      <p id="detailDept" style="color: #a78bfa; font-weight: 600;"></p>
+      <div class="modal-steps">
+        <p style="margin-bottom:6px;"><strong>Definición del Indicador:</strong></p>
+        <p id="detailDef" style="color: #e2e8f0; margin-bottom:12px;"></p>
+
+        <p style="margin-bottom:4px;"><strong>Fórmula / Método de Cálculo:</strong></p>
+        <div class="formula-box" id="detailFormula"></div>
+
+        <p style="margin-bottom:6px;"><strong>Meta Objetivo:</strong> <span id="detailTarget" style="color:#00f0ff; font-weight:700;"></span> &nbsp;&bull;&nbsp; <strong>Frecuencia:</strong> <span id="detailFreq"></span></p>
+        <p style="margin-bottom:0;"><strong>Puesto Responsable:</strong> <span id="detailOwner" style="color:#f8fafc;"></span></p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="document.getElementById('detailModal').classList.remove('open')">Cerrar Ficha</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+    const PALETTE = [
+      { line: "#00f0ff", fillTop: "rgba(0, 240, 255, 0.30)" },
+      { line: "#10b981", fillTop: "rgba(16, 185, 129, 0.30)" },
+      { line: "#8b5cf6", fillTop: "rgba(139, 92, 246, 0.30)" },
+      { line: "#3b82f6", fillTop: "rgba(59, 130, 246, 0.30)" },
+      { line: "#f59e0b", fillTop: "rgba(245, 158, 11, 0.30)" },
+      { line: "#ec4899", fillTop: "rgba(236, 72, 153, 0.30)" },
+      { line: "#06b6d4", fillTop: "rgba(6, 182, 212, 0.30)" }
+    ];
+
+    const DEFAULT_KPIS = [
+      {
+        kpi: "Control de inventario",
+        objetivo: 95,
+        isLowerBetter: false,
+        definicion: "Evalúa el grado de exactitud y control sobre los equipos y dispositivos de telefonía de la empresa respecto al registro teórico en el sistema.",
+        formula: "(Total de equipos físicos contabilizados en el mes / Total de equipos registrados en la lista maestra) * 100",
+        frecuencia: "Trimestral",
+        departamento: "Telefonía y activo fijo",
+        responsable: "Supervisor de Compras y Agencia de Viajes",
+        mensual: { Enero: null, Febrero: null, Marzo: null, Abril: null, Mayo: null, Junio: null, Julio: null, Agosto: null, Septiembre: null, Octubre: null, Noviembre: null, Diciembre: null },
+        promedio: null
+      },
+      {
+        kpi: "Atención y cierre de tickets telefonía (GLPI)",
+        objetivo: 80,
+        isLowerBetter: false,
+        definicion: "Mide la eficiencia del área de soporte en la resolución de incidencias y requerimientos relacionados con telefonía dentro de los tiempos establecidos.",
+        formula: "(Total de tickets atendidos / Total de tickets del periodo) * 100",
+        frecuencia: "Mensual",
+        departamento: "Telefonía y activo fijo",
+        responsable: "Supervisor de Compras y Agencia de Viajes",
+        mensual: { Enero: 100.00, Febrero: 100.00, Marzo: 100.00, Abril: 100.00, Mayo: 100.00, Junio: 44.40, Julio: 100.00, Agosto: 100.00, Septiembre: 100.00, Octubre: 100.00, Noviembre: null, Diciembre: null },
+        promedio: 94.44
+      },
+      {
+        kpi: "Seguimiento y atención de Solicitudes de compras",
+        objetivo: 85,
+        isLowerBetter: false,
+        definicion: "Mide el porcentaje de solicitudes de compra ingresadas que han sido procesadas, gestionadas y resueltas por el departamento en el periodo.",
+        formula: "(Total de solicitudes resueltas a tiempo / Total de solicitudes recibidas en el periodo) * 100",
+        frecuencia: "Mensual",
+        departamento: "Compras y agencia de viajes",
+        responsable: "Supervisor de Compras y Agencia de Viajes",
+        mensual: { Enero: "S/R", Febrero: "S/R", Marzo: "S/R", Abril: "S/R", Mayo: "S/R", Junio: "S/R", Julio: 100.00, Agosto: 100.00, Septiembre: 100.00, Octubre: 100.00, Noviembre: null, Diciembre: null },
+        promedio: 40.00
+      },
+      {
+        kpi: "Tiempo envío candidatos",
+        objetivo: 90,
+        isLowerBetter: false,
+        definicion: "Mide el cumplimiento en días transcurridos desde la recepción de la solicitud de vacante hasta la presentación del primer candidato calificado.",
+        formula: "(Suma de días transcurridos por cada vacante / Total de vacantes evaluadas) * 100",
+        frecuencia: "Mensual",
+        departamento: "Capital Humano",
+        responsable: "Especialista de Capacitación y Desarrollo Corporativo",
+        mensual: { Enero: "S/R", Febrero: "S/R", Marzo: 100.00, Abril: 100.00, Mayo: 100.00, Junio: 100.00, Julio: 93.75, Agosto: 100.00, Septiembre: 100.00, Octubre: 100.00, Noviembre: null, Diciembre: null },
+        promedio: 79.38
+      },
+      {
+        kpi: "% Cumplimiento Cursos e-learning",
+        objetivo: 80,
+        isLowerBetter: false,
+        definicion: "Mide el porcentaje de cursos de capacitación en modalidad e-learning completados satisfactoriamente respecto al total asignado.",
+        formula: "(Total de cursos e-learning completados / Total de cursos e-learning asignados) * 100",
+        frecuencia: "Mensual",
+        departamento: "Capital Humano",
+        responsable: "Especialista de Capacitación y Desarrollo Corporativo",
+        mensual: { Enero: "S/R", Febrero: "S/R", Marzo: "S/R", Abril: "S/R", Mayo: 74.50, Junio: 81.00, Julio: 80.00, Agosto: 100.00, Septiembre: 100.00, Octubre: 100.00, Noviembre: null, Diciembre: null },
+        promedio: 53.55
+      },
+      {
+        kpi: "Rotación personal corporativo",
+        objetivo: 5,
+        isLowerBetter: true,
+        definicion: "Mide el índice de salidas (bajas voluntarias o involuntarias) de colaboradores en el área corporativa respecto a la plantilla promedio.",
+        formula: "(Total de bajas del mes / Plantilla promedio del mes) * 100",
+        frecuencia: "Mensual",
+        departamento: "Capital Humano",
+        responsable: "Especialista de Capacitación y Desarrollo Corporativo",
+        mensual: { Enero: 3.40, Febrero: 2.60, Marzo: 3.70, Abril: 3.40, Mayo: 2.80, Junio: 2.80, Julio: 3.40, Agosto: 1.80, Septiembre: 1.70, Octubre: "S/R", Noviembre: null, Diciembre: null },
+        promedio: 2.56
+      },
+      {
+        kpi: "Atención y cierre de tickets mantenimiento (GLPI)",
+        objetivo: 95,
+        isLowerBetter: false,
+        definicion: "Mide la eficiencia del área de mantenimiento en la resolución de incidencias y requerimientos reportados en GLPI dentro del SLA.",
+        formula: "(Total de tickets atendidos / Total de tickets del periodo) * 100",
+        frecuencia: "Mensual",
+        departamento: "Recursos Materiales",
+        responsable: "Coordinador de Mantenimiento",
+        mensual: { Enero: 100.00, Febrero: 100.00, Marzo: 100.00, Abril: 100.00, Mayo: 100.00, Junio: 100.00, Julio: 93.75, Agosto: 100.00, Septiembre: "S/R", Octubre: "S/R", Noviembre: null, Diciembre: null },
+        promedio: 79.38
+      }
+    ];
+
+    let kpiData = JSON.parse(JSON.stringify(DEFAULT_KPIS));
+    let chartInstances = [];
+    let timerId = null;
+
+    function parsePercent(val) {
+      if (val === null || val === undefined) return null;
+      const str = String(val).trim();
+      if (!str || str.toUpperCase() === "S/R" || str === "-" || str.toLowerCase().includes("resultado")) {
+        return str.toUpperCase() === "S/R" ? "S/R" : null;
+      }
+      const num = parseFloat(str.replace("%", "").replace("≤", "").replace(">=", "").trim());
+      return isNaN(num) ? null : num;
+    }
+
+    async function fetchFromGoogleSheets(url) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(url, {
+          download: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            try {
+              const rows = results.data;
+              const parsed = [];
+              for (let i = 0; i < rows.length; i++) {
+                const r = rows[i];
+                const name = (r[0] || "").trim();
+                const obj = parsePercent(r[1]);
+                if (!name || name === "KPI" || obj === null) continue;
+
+                const isLower = name.toLowerCase().includes("rotación") || String(r[1]).includes("≤");
+                const mensual = {
+                  Enero: parsePercent(r[8]),
+                  Febrero: parsePercent(r[9]),
+                  Marzo: parsePercent(r[10]),
+                  Abril: parsePercent(r[11]),
+                  Mayo: parsePercent(r[12]),
+                  Junio: parsePercent(r[13]),
+                  Julio: parsePercent(r[14]),
+                  Agosto: parsePercent(r[15]),
+                  Septiembre: parsePercent(r[16]),
+                  Octubre: parsePercent(r[17]),
+                  Noviembre: parsePercent(r[18]),
+                  Diciembre: parsePercent(r[19])
+                };
+
+                parsed.push({
+                  kpi: name,
+                  objetivo: obj,
+                  isLowerBetter: isLower,
+                  definicion: (r[2] || "").trim(),
+                  formula: (r[3] || "").trim(),
+                  frecuencia: (r[4] || "Mensual").trim(),
+                  departamento: (r[5] || "General").trim(),
+                  responsable: (r[6] || "").trim(),
+                  mensual,
+                  promedio: parsePercent(r[20])
+                });
+              }
+
+              if (parsed.length > 0) {
+                kpiData = parsed;
+                updateSyncStatus(true);
+                populateSelectors();
+                renderDashboard();
+                resolve(true);
+              } else {
+                reject("No se encontraron filas válidas.");
+              }
+            } catch (err) {
+              reject(err);
+            }
+          },
+          error: function(err) {
+            reject(err);
+          }
+        });
+      });
+    }
+
+    function updateSyncStatus(isLive) {
+      const badge = document.getElementById("syncBadge");
+      const text = document.getElementById("syncText");
+      const now = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      document.getElementById("statLastUpdate").textContent = "Última sincronización: " + now;
+
+      if (isLive) {
+        badge.classList.remove("offline");
+        text.textContent = "En Vivo • Google Sheets Conectado";
+      } else {
+        badge.classList.add("offline");
+        text.textContent = "Modo Local • Datos Precargados 2026";
+      }
+    }
+
+    async function refreshData() {
+      const savedUrl = localStorage.getItem("sc_kpi_sheet_url") || "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSgfMyuEDViHtGfKddqs7udtpmoC0451EvFmD3FLbAcihdxXrpEmlxMz1pzJidO0J_16R0ArVDgfk_/pub?gid=1641675204&single=true&output=csv";
+      if (savedUrl) {
+        try {
+          await fetchFromGoogleSheets(savedUrl);
+        } catch (e) {
+          console.warn("Error al sincronizar Sheets:", e);
+        }
+      } else {
+        updateSyncStatus(false);
+        renderDashboard();
+      }
+    }
+
+    function populateSelectors() {
+      const deptSelect = document.getElementById("deptFilter");
+      const currentDept = deptSelect.value;
+      const depts = [...new Set(kpiData.map(d => d.departamento))];
+      deptSelect.innerHTML = '<option value="ALL">Todos los Departamentos</option>' +
+        depts.map(d => `<option value="${d}">${d}</option>`).join("");
+      if (depts.includes(currentDept)) deptSelect.value = currentDept;
+    }
+
+    function getLatestValue(item) {
+      for (let i = MONTHS.length - 1; i >= 0; i--) {
+        const m = MONTHS[i];
+        const v = item.mensual[m];
+        if (typeof v === "number") return { val: v, month: m };
+      }
+      for (let i = MONTHS.length - 1; i >= 0; i--) {
+        const m = MONTHS[i];
+        if (item.mensual[m] === "S/R") return { val: "S/R", month: m };
+      }
+      return { val: null, month: "Sin datos" };
+    }
+
+    function evaluateStatus(item, val) {
+      if (val === null || val === undefined) return { code: "na", label: "Pendiente" };
+      if (val === "S/R") return { code: "na", label: "S/R (Sin Reporte)" };
+      if (item.isLowerBetter) {
+        if (val <= item.objetivo) return { code: "ok", label: "En Meta" };
+        if (val <= item.objetivo * 1.15) return { code: "warn", label: "Alerta" };
+        return { code: "bad", label: "Fuera de Meta" };
+      } else {
+        if (val >= item.objetivo) return { code: "ok", label: "Cumple Meta" };
+        if (val >= item.objetivo * 0.9) return { code: "warn", label: "Cerca de Meta" };
+        return { code: "bad", label: "Bajo Objetivo" };
+      }
+    }
+
+    function renderDashboard() {
+      const selectedDept = document.getElementById("deptFilter").value;
+      const selectedStatus = document.getElementById("statusFilter").value;
+
+      let filtered = kpiData.filter(item => {
+        if (selectedDept !== "ALL" && item.departamento !== selectedDept) return false;
+        if (selectedStatus !== "ALL") {
+          const { val } = getLatestValue(item);
+          const st = evaluateStatus(item, val);
+          if (selectedStatus === "OK" && st.code !== "ok") return false;
+          if (selectedStatus === "ALERT" && st.code === "ok") return false;
+        }
+        return true;
+      });
+
+      let onTargetCount = 0;
+      let evaluatedCount = 0;
+      let alertOrMissing = 0;
+
+      filtered.forEach(item => {
+        const { val } = getLatestValue(item);
+        const status = evaluateStatus(item, val);
+        if (typeof val === "number") {
+          evaluatedCount++;
+          if (status.code === "ok") onTargetCount++;
+          else alertOrMissing++;
+        } else {
+          alertOrMissing++;
+        }
+      });
+
+      document.getElementById("statOnTarget").textContent = `${onTargetCount} / ${evaluatedCount}`;
+      document.getElementById("statAlerts").textContent = alertOrMissing;
+      document.getElementById("matrixCountLabel").textContent = `${filtered.length} indicadores visibles`;
+
+      renderMatrix(filtered);
+      renderAllCharts(filtered);
+    }
+
+    function renderMatrix(list) {
+      const tbody = document.getElementById("matrixBody");
+      tbody.innerHTML = list.map(item => {
+        const originalIndex = kpiData.indexOf(item);
+        const cells = MONTHS.map(m => {
+          const v = item.mensual[m];
+          if (typeof v === "number") {
+            const ok = item.isLowerBetter ? v <= item.objetivo : v >= item.objetivo;
+            return `<td class="${ok ? 'cell-ok' : 'cell-bad'}">${v.toFixed(1)}%</td>`;
+          }
+          if (v === "S/R") return `<td class="cell-sr">S/R</td>`;
+          return `<td style="color:#475569;">—</td>`;
+        }).join("");
+
+        const prom = typeof item.promedio === "number" ? item.promedio.toFixed(2) + "%" : "—";
+        const metaStr = (item.isLowerBetter ? "≤ " : "") + item.objetivo + "%";
+        return `
+          <tr>
+            <td title="Clic para consultar ficha de ${item.kpi}">
+              <span class="matrix-link" onclick="showKpiDetail(${originalIndex})">${item.kpi}</span>
+            </td>
+            <td style="color:#94a3b8;">${item.departamento}</td>
+            <td><strong>${metaStr}</strong></td>
+            ${cells}
+            <td style="color:#00f0ff; font-weight:700;">${prom}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderAllCharts(list) {
+      chartInstances.forEach(c => c.destroy());
+      chartInstances = [];
+
+      const container = document.getElementById("allChartsContainer");
+      container.innerHTML = "";
+
+      list.forEach((item) => {
+        const originalIndex = kpiData.indexOf(item);
+        const { val, month } = getLatestValue(item);
+        const status = evaluateStatus(item, val);
+        const metaPrefix = item.isLowerBetter ? "≤ " : "";
+        const displayVal = typeof val === "number" ? val.toFixed(2) + "%" : (val === "S/R" ? "S/R" : "N/D");
+        const promStr = typeof item.promedio === "number" ? item.promedio.toFixed(2) + "%" : "N/D";
+        const canvasId = `kpiChart_${originalIndex}`;
+
+        const card = document.createElement("article");
+        card.className = "kpi-chart-card";
+        card.innerHTML = `
+          <div class="kpi-card-header">
+            <div class="kpi-title-block">
+              <h3>${item.kpi}</h3>
+              <div class="kpi-meta-line">
+                <span>Meta Objetivo: <span class="meta-highlight">${metaPrefix}${item.objetivo}%</span></span>
+                <span>&bull;</span>
+                <span class="dept-highlight">${item.departamento}</span>
+              </div>
+            </div>
+
+            <div class="kpi-card-actions">
+              <button class="btn-consult" onclick="showKpiDetail(${originalIndex})" title="Ver definición, fórmula y responsable">
+                &#9432; Info y Fórmula
+              </button>
+              <span class="status-pill status-${status.code}">${status.label}</span>
+            </div>
+          </div>
+
+          <div class="kpi-current-strip">
+            <div class="strip-stat">
+              <span style="color: var(--text-secondary);">Último dato (${month}):</span>
+              <span class="val" style="color: ${typeof val === 'number' ? '#ffffff' : '#64748b'};">${displayVal}</span>
+            </div>
+            <div class="strip-stat">
+              <span style="color: var(--text-secondary);">Promedio Anual:</span>
+              <span style="color: var(--accent-cyan); font-weight: 700;">${promStr}</span>
+            </div>
+          </div>
+
+          <div class="mini-chart-wrapper">
+            <canvas id="${canvasId}"></canvas>
+          </div>
+        `;
+        container.appendChild(card);
+
+        const ctx = document.getElementById(canvasId).getContext("2d");
+        const colorSet = PALETTE[originalIndex % PALETTE.length];
+        const gradient = ctx.createLinearGradient(0, 0, 0, 210);
+        gradient.addColorStop(0, colorSet.fillTop);
+        gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+        const monthlyVals = MONTHS.map(m => typeof item.mensual[m] === "number" ? item.mensual[m] : null);
+        const targetLine = MONTHS.map(() => item.objetivo);
+
+        const chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: MONTHS.map(m => m.slice(0, 3)),
+            datasets: [
+              {
+                label: "Resultado (%)",
+                data: monthlyVals,
+                borderColor: colorSet.line,
+                backgroundColor: gradient,
+                borderWidth: 2.8,
+                pointBackgroundColor: colorSet.line,
+                pointBorderColor: "#07090f",
+                pointBorderWidth: 1.5,
+                pointRadius: 4.5,
+                pointHoverRadius: 6,
+                tension: 0.35,
+                fill: true,
+                spanGaps: true
+              },
+              {
+                label: `Meta (${metaPrefix}${item.objetivo}%)`,
+                data: targetLine,
+                borderColor: "#f43f5e",
+                borderDash: [5, 5],
+                borderWidth: 1.8,
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: "index",
+              intersect: false
+            },
+            plugins: {
+              legend: {
+                position: "top",
+                align: "end",
+                labels: {
+                  color: "#94a3b8",
+                  boxWidth: 12,
+                  font: { family: "Inter", size: 11 }
+                }
+              },
+              tooltip: {
+                backgroundColor: "#0b0f19",
+                titleColor: "#f8fafc",
+                bodyColor: "#cbd5e1",
+                borderColor: "rgba(255,255,255,0.12)",
+                borderWidth: 1,
+                callbacks: {
+                  label: function(context) {
+                    const v = context.parsed.y;
+                    return v !== null ? `${context.dataset.label}: ${v.toFixed(2)}%` : `${context.dataset.label}: S/R`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: "#94a3b8", font: { size: 11 } },
+                grid: { color: "rgba(255,255,255,0.04)" }
+              },
+              y: {
+                beginAtZero: true,
+                suggestedMax: item.isLowerBetter ? 8 : 105,
+                ticks: {
+                  color: "#94a3b8",
+                  font: { size: 11 },
+                  callback: v => v + "%"
+                },
+                grid: { color: "rgba(255,255,255,0.06)" }
+              }
+            }
+          }
+        });
+
+        chartInstances.push(chart);
+      });
+    }
+
+    function showKpiDetail(index) {
+      const item = kpiData[index];
+      if (!item) return;
+      document.getElementById("detailTitle").textContent = item.kpi;
+      document.getElementById("detailDept").textContent = "Departamento: " + item.departamento;
+      document.getElementById("detailDef").textContent = item.definicion || "Sin definición registrada.";
+      document.getElementById("detailFormula").textContent = item.formula || "N/A";
+      document.getElementById("detailFreq").textContent = item.frecuencia;
+      document.getElementById("detailTarget").textContent = (item.isLowerBetter ? "≤ " : "") + item.objetivo + "%";
+      document.getElementById("detailOwner").textContent = item.responsable || "No asignado";
+      document.getElementById("detailModal").classList.add("open");
+    }
+
+    function openConfigModal() {
+      document.getElementById("sheetCsvUrl").value = localStorage.getItem("sc_kpi_sheet_url") || "";
+      document.getElementById("configModal").classList.add("open");
+    }
+
+    function closeConfigModal() {
+      document.getElementById("configModal").classList.remove("open");
+    }
+
+    async function saveSheetUrl() {
+      const url = document.getElementById("sheetCsvUrl").value.trim();
+      if (!url) {
+        alert("Por favor ingresa una URL CSV válida de Google Sheets.");
+        return;
+      }
+      localStorage.setItem("sc_kpi_sheet_url", url);
+      closeConfigModal();
+      await refreshData();
+    }
+
+    function resetToDefaultData() {
+      localStorage.removeItem("sc_kpi_sheet_url");
+      kpiData = JSON.parse(JSON.stringify(DEFAULT_KPIS));
+      updateSyncStatus(false);
+      populateSelectors();
+      renderDashboard();
+      closeConfigModal();
+    }
+
+    function setupAutoRefresh() {
+      if (timerId) clearInterval(timerId);
+      const ms = parseInt(document.getElementById("refreshInterval").value, 10);
+      if (ms > 0) {
+        timerId = setInterval(refreshData, ms);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      populateSelectors();
+      refreshData();
+      setupAutoRefresh();
+    });
+  </script>
+</body>
+</html>
